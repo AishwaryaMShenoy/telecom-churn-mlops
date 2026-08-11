@@ -1,0 +1,26 @@
+# Virtual environment
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Environment variables
+.env
+
+# MLflow
+mlruns/
+
+# Generated data
+data/raw/
+data/processed/
+
+# Models
+models/*.pkl
+models/*.joblib
+
+# IDE
+.vscode/
