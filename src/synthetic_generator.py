@@ -87,8 +87,15 @@ def generate_dataset():
         for i in range(1, N_CUSTOMERS + 1)
     ]
 
+    # Synthetic mobile numbers for customer-service lookup
+    phone_numbers = [
+        f"9{rng.integers(100000000, 1000000000)}"
+        for _ in range(N_CUSTOMERS)
+    ]
+
     df = pd.DataFrame({
-        "customer_id": customer_ids
+        "customer_id": customer_ids,
+        "phone_number": phone_numbers,
     })
 
     # --------------------------------------------------
@@ -102,14 +109,37 @@ def generate_dataset():
         size=N_CUSTOMERS
     )
 
-    # Customer-specific behavioural trend
+    # --------------------------------------------------
+    # Latent customer churn behaviour
+    # --------------------------------------------------
+
+    # Hidden characteristic used only by the synthetic
+    # data generator.
     #
-    # Positive = customer usage generally increasing
-    # Negative = customer usage generally declining
-    customer_trend = rng.normal(
-        loc=0.0,
-        scale=0.035,
-        size=N_CUSTOMERS
+    # The ML model will never receive this variable.
+
+    future_churn = (
+        rng.random(N_CUSTOMERS) < 0.12
+    )
+
+
+    # Customers who will eventually churn show a
+    # stronger declining trend before becoming inactive.
+
+    customer_trend = np.where(
+        future_churn,
+
+        rng.normal(
+            loc=-0.08,
+            scale=0.025,
+            size=N_CUSTOMERS
+        ),
+
+        rng.normal(
+            loc=0.015,
+            scale=0.02,
+            size=N_CUSTOMERS
+        )
     )
 
     # Customer tenure in months
@@ -295,42 +325,7 @@ def generate_dataset():
 
         df[f"complaints{suffix}"] = complaints
 
-    # --------------------------------------------------
-    # Generate churn risk
-    # --------------------------------------------------
-
-    # Customers with declining behaviour are more likely
-    # to churn.
-    decline_strength = np.maximum(
-        -customer_trend,
-        0
-    )
-
-    # Low-value customers have slightly higher risk.
-    low_value_risk = np.maximum(
-        1 - customer_value / 500,
-        0
-    )
-
-    # Combine behavioural signals.
-    churn_score = (
-        0.5 * decline_strength
-        + 0.3 * low_value_risk
-        + 0.2 * rng.random(N_CUSTOMERS)
-    )
-
-    # Convert score into probability.
-    churn_probability = np.clip(
-        0.01 + churn_score * 0.45,
-        0.01,
-        0.15
-    )
-
-    churn_flag = (
-        rng.random(N_CUSTOMERS)
-        < churn_probability
-    )
-
+    
     # --------------------------------------------------
     # Apply churn to target month
     # --------------------------------------------------
@@ -348,8 +343,7 @@ def generate_dataset():
     ]
 
     # Churned customers become inactive.
-    df.loc[churn_flag, churn_columns] = 0
-
+    df.loc[future_churn, churn_columns] = 0
     # ----------------------------------------------
     # Create explicit churn label
     # ----------------------------------------------
