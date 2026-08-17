@@ -1,0 +1,41 @@
+services:
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: telecom-churn-api
+
+    ports:
+      - "8000:8000"
+
+    restart: unless-stopped
+
+
+  streamlit:
+    image: python:3.12-slim
+
+    container_name: telecom-churn-ui
+
+    working_dir: /app
+
+    volumes:
+      - ./app:/app/app
+
+    command: >
+      sh -c "
+      pip install --no-cache-dir
+      streamlit==1.61.1
+      requests==2.32.5
+      &&
+      streamlit run app/streamlit_app.py
+      --server.address=0.0.0.0
+      --server.port=8501
+      "
+
+    ports:
+      - "8502:8501"
+
+    depends_on:
+      - api

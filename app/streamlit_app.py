@@ -295,7 +295,7 @@ if search:
         try:
 
             response = requests.post(
-                "http://127.0.0.1:8000/customer",
+                "http://api:8000/customer",
                 json={
                     "phone_number": phone_number
                 },
